@@ -1,0 +1,289 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal Worlds Verification</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: monospace;
+      background-color: #000;  /* Czarny kolor tła */
+      color: #00ffc3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      user-select: none;
+      overflow: hidden;
+    }
+
+    .box {
+      background: rgba(26, 26, 26, 0.8); /* Tło czarne z przezroczystością */
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 25px #00ffc360;
+      text-align: center;
+      max-width: 420px;
+      width: 90%;
+    }
+
+    #captcha {
+      font-size: 2rem;
+      letter-spacing: 4px;
+      padding: 10px 20px;
+      background: #000;
+      border: 2px dashed #00ffc3;
+      border-radius: 8px;
+      display: inline-block;
+      margin: 20px 0;
+    }
+
+    input, select {
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 6px;
+      border: none;
+      text-align: center;
+      margin: 8px;
+    }
+
+    button {
+      background: #00ffc3;
+      color: #000;
+      font-weight: bold;
+      font-size: 1rem;
+      padding: 10px 20px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .admin-icon {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 999;
+      cursor: pointer;
+    }
+
+    #admin-panel {
+      display: none;
+      position: fixed;
+      bottom: 70px;
+      right: 20px;
+      background: #111;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px #00ffc360;
+      color: white;
+    }
+
+    .lang-select {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="lang-select">
+    <select onchange="changeLang(this.value)">
+      <option value="en">English</option>
+      <option value="pl">Polski</option>
+      <option value="es">Español</option>
+      <option value="de">Deutsch</option>
+      <option value="fr">Français</option>
+    </select>
+  </div>
+
+  <div class="box">
+    <h1 id="title">Verify to Join</h1>
+    <div id="captcha">LOADING</div>
+    <p id="instruction">Type the code above:</p>
+    <input id="input" placeholder="Enter code" />
+    <br />
+    <button onclick="verify()"><span id="verifyBtn">Verify</span></button>
+    <div id="status" style="margin-top:10px;"></div>
+  </div>
+
+  <img src="https://cdn-icons-png.flaticon.com/512/2913/2913609.png"
+       width="40" class="admin-icon"
+       onclick="toggleAdmin()" title="Admin Login"/>
+
+  <div id="admin-panel">
+    <p><strong>Admin Login</strong></p>
+    <input type="password" id="admin-pass" placeholder="Password" />
+    <br />
+    <button onclick="checkAdmin()">Login</button>
+    <p id="admin-msg"></p>
+    <div id="admin-actions" style="display:none;">
+      <button onclick="viewSource()">View Source Code</button>
+      <button onclick="downloadFile()">Download HTML</button>
+      <button onclick="logoutAdmin()">Logout</button>
+      <br />
+      <h3>Manage Blacklist</h3>
+      <input type="text" id="discord-id" placeholder="Discord ID" />
+      <button onclick="addToBlacklist()">Add to Blacklist</button>
+      <button onclick="removeFromBlacklist()">Remove from Blacklist</button>
+      <p id="blacklist-status"></p>
+      <h4>Current Blacklist:</h4>
+      <ul id="blacklist"></ul>
+    </div>
+  </div>
+
+  <script>
+    let bannedUsers = ["discordID1", "discordID2"];  // Example of banned users Discord IDs
+
+    const captchaCode = () => Array.from({length: 5}, () =>
+      "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"[Math.floor(Math.random() * 32)]
+    ).join('');
+
+    let code = captchaCode();
+    document.getElementById("captcha").textContent = code;
+
+    function generateCaptcha() {
+      code = captchaCode(); // Now captcha changes faster
+      document.getElementById("captcha").textContent = code;
+    }
+
+    setInterval(generateCaptcha, 15000); // Update captcha every 15 seconds
+
+    function verify() {
+      const userInput = document.getElementById("input").value.toUpperCase();
+      if (bannedUsers.includes(userInput)) {
+        document.getElementById("status").textContent = "❌ You are banned.";
+        return;
+      }
+      if (userInput === code) {
+        document.getElementById("status").textContent = lang.success;
+      } else {
+        document.getElementById("status").textContent = lang.fail;
+      }
+    }
+
+    let isAdmin = false;
+
+    function toggleAdmin() {
+      const panel = document.getElementById("admin-panel");
+      panel.style.display = panel.style.display === "none" ? "block" : "none";
+    }
+
+    function checkAdmin() {
+      const pass = document.getElementById("admin-pass").value;
+      const msg = document.getElementById("admin-msg");
+      if (pass === "##RTfg$$") {
+        isAdmin = true;
+        msg.textContent = lang.adminWelcome;
+        msg.style.color = "#00ff99";
+        document.getElementById("admin-actions").style.display = "block";
+      } else {
+        msg.textContent = lang.adminWrong;
+        msg.style.color = "red";
+      }
+    }
+
+    function logoutAdmin() {
+      isAdmin = false;
+      document.getElementById("admin-msg").textContent = "You have been logged out.";
+      document.getElementById("admin-actions").style.display = "none";
+      document.getElementById("admin-pass").value = "";
+    }
+
+    function viewSource() {
+      const source = document.documentElement.outerHTML;
+      const newWindow = window.open();
+      newWindow.document.write(`<pre>${source}</pre>`);
+      newWindow.document.close();
+    }
+
+    function downloadFile() {
+      const htmlContent = document.documentElement.outerHTML;
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = "portal-worlds.html";
+      link.click();
+    }
+
+    function addToBlacklist() {
+      const discordId = document.getElementById("discord-id").value;
+      if (discordId && !bannedUsers.includes(discordId)) {
+        bannedUsers.push(discordId);
+        document.getElementById("blacklist-status").textContent = `Added ${discordId} to blacklist.`;
+        updateBlacklistDisplay();
+      } else {
+        document.getElementById("blacklist-status").textContent = `Invalid or already banned ID.`;
+      }
+    }
+
+    function removeFromBlacklist() {
+      const discordId = document.getElementById("discord-id").value;
+      const index = bannedUsers.indexOf(discordId);
+      if (index !== -1) {
+        bannedUsers.splice(index, 1);
+        document.getElementById("blacklist-status").textContent = `Removed ${discordId} from blacklist.`;
+        updateBlacklistDisplay();
+      } else {
+        document.getElementById("blacklist-status").textContent = `ID not found in blacklist.`;
+      }
+    }
+
+    function updateBlacklistDisplay() {
+      const blacklistUl = document.getElementById("blacklist");
+      blacklistUl.innerHTML = '';
+      bannedUsers.forEach(userId => {
+        const li = document.createElement('li');
+        li.textContent = userId;
+        blacklistUl.appendChild(li);
+      });
+    }
+
+    // === Multi-language ===
+    const langs = {
+      en: {
+        title: "Verify to Join",
+        instruction: "Type the code above:",
+        success: "✅ Verified!",
+        fail: "❌ Incorrect code.",
+        verify: "Verify",
+        adminWelcome: "Welcome Admin!",
+        adminWrong: "Wrong password.",
+        banned: "You are banned."
+      },
+      pl: {
+        title: "Weryfikacja",
+        instruction: "Wpisz kod powyżej:",
+        success: "✅ Zweryfikowano!",
+        fail: "❌ Błędny kod.",
+        verify: "Zweryfikuj",
+        adminWelcome: "Witaj Administratorze!",
+        adminWrong: "Błędne hasło.",
+        banned: "Jesteś zablokowany."
+      }
+    };
+
+    let lang = langs["en"];
+    function changeLang(l) {
+      lang = langs[l];
+      document.getElementById("title").textContent = lang.title;
+      document.getElementById("instruction").textContent = lang.instruction;
+      document.getElementById("verifyBtn").textContent = lang.verify;
+    }
+
+    // Prevent context menu and key events for code protection
+    document.addEventListener("contextmenu", e => e.preventDefault());
+    document.addEventListener("keydown", e => {
+      if (
+        e.ctrlKey && ["U", "S", "P"].includes(e.key.toUpperCase()) ||
+        e.keyCode === 123  // F12 block
+      ) {
+        e.preventDefault();
+        alert("Source code view is disabled.");
+      }
+    });
+  </script>
+</body>
+</html>
